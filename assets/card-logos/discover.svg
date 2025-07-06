@@ -1,0 +1,5 @@
+<svg width="40" height="24" viewBox="0 0 40 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="40" height="24" rx="4" fill="#FF6000"/>
+  <path d="M8 8h10v2h-10zm0 3h12v2h-12zm0 3h8v2h-8z" fill="white"/>
+  <text x="20" y="20" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="5" font-weight="bold">DISCOVER</text>
+</svg>

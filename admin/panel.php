@@ -5,14 +5,6 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_admin();
 include __DIR__ . '/../includes/header.php';
-?>
-<?php
-// admin/panel.php
-session_start();
-require_once __DIR__ . '/../includes/auth.php';
-require_once __DIR__ . '/../includes/functions.php';
-require_admin();
-include __DIR__ . '/../includes/header.php';
 
 $db = get_db();
 
@@ -25,7 +17,7 @@ $total_revenue = $db->query('SELECT SUM(i.price) FROM purchases p JOIN items i O
 
 <div class="admin-dashboard">
     <div class="admin-header">
-        <h1>⚡ Admin Control Panel</h1>
+        <h1>⚡ JaxxyCC Store Admin</h1>
         <p>Manage your platform efficiently</p>
     </div>
 
@@ -71,14 +63,24 @@ $total_revenue = $db->query('SELECT SUM(i.price) FROM purchases p JOIN items i O
                 <p>View, manage, and ban users</p>
             </a>
             <a href="/admin/credits.php" class="action-card">
-                <div class="action-icon">�</div>
+                <div class="action-icon">💰</div>
                 <h3>Credit Management</h3>
                 <p>Send credits to user wallets</p>
+            </a>
+            <a href="/admin/gift_cards.php" class="action-card">
+                <div class="action-icon">🎁</div>
+                <h3>Gift Cards</h3>
+                <p>Create and manage gift cards</p>
             </a>
             <a href="/admin/store.php" class="action-card">
                 <div class="action-icon">🛍️</div>
                 <h3>Store Management</h3>
                 <p>Add, edit, and manage store items</p>
+            </a>
+            <a href="/admin/telegram.php" class="action-card">
+                <div class="action-icon">📱</div>
+                <h3>Telegram Bot</h3>
+                <p>Manage bot and user integrations</p>
             </a>
             <a href="/admin/analytics.php" class="action-card">
                 <div class="action-icon">📊</div>

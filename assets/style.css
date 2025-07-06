@@ -271,6 +271,232 @@ footer {
     margin-top: 4rem;
 }
 
+/* Credit Card Styles */
+.credit-card-item {
+    border: 2px solid #4f46e5;
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+}
+
+.credit-card-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 8px;
+    width: fit-content;
+}
+
+.card-logo-svg {
+    width: 32px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.card-details {
+    color: #a5b4fc;
+    font-size: 13px;
+    margin: 4px 0;
+}
+
+.card-preview {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border: 1px solid #475569;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 12px 0;
+    font-family: 'Courier New', monospace;
+}
+
+.card-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.card-preview-number {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f1f5f9;
+    letter-spacing: 2px;
+}
+
+.card-preview-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #cbd5e1;
+}
+
+.card-preview-holder {
+    font-size: 13px;
+    color: #e2e8f0;
+    text-transform: uppercase;
+}
+
+.card-hidden-info {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+    font-size: 13px;
+    color: #94a3b8;
+    text-align: center;
+}
+
+.card-reveal-info {
+    background: #059669;
+    border: 1px solid #10b981;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+    font-family: 'Courier New', monospace;
+}
+
+.card-reveal-info h4 {
+    color: #d1fae5;
+    margin-bottom: 8px;
+}
+
+.card-reveal-info p {
+    color: #a7f3d0;
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+.card-data-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0;
+}
+
+.card-data-label {
+    font-weight: bold;
+    color: #d1fae5;
+}
+
+.card-data-value {
+    color: #a7f3d0;
+    font-weight: normal;
+}
+
+/* User Info Styles */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-left: auto;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(99, 102, 241, 0.3);
+}
+
+.user-avatar-placeholder {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.user-details .username {
+    font-weight: 600;
+    color: #e8e8e8;
+    font-size: 0.9rem;
+}
+
+.user-details .telegram-username {
+    font-size: 0.75rem;
+    color: #10b981;
+    font-weight: 500;
+}
+
+.online-status {
+    font-size: 0.7rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.online-status.online {
+    color: #10b981;
+}
+
+.online-status.offline {
+    color: #ef4444;
+}
+
+/* Profile page enhancements */
+.profile-photo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(99, 102, 241, 0.3);
+}
+
+.profile-section {
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.profile-section h4 {
+    margin: 0 0 1rem 0;
+    color: #e8e8e8;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.telegram-section {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.warning-section {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     nav {
@@ -295,6 +521,20 @@ footer {
     
     th, td {
         padding: 0.5rem;
+    }
+    
+    .user-info {
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+    
+    .user-details {
+        text-align: center;
+    }
+    
+    .profile-grid {
+        grid-template-columns: 1fr;
     }
 }
 

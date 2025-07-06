@@ -28,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <div class="card">
-    <h2>⚡ Admin Access</h2>
-    <p style="color: #888; margin-bottom: 2rem;">Administrative login required</p>
+    <h2>⚡ JaxxyCC Store Admin</h2>
+    <p style="color: #888; margin-bottom: 2rem;">Administrative access required</p>
     
     <?php if ($error): ?>
         <div class="error"><?= htmlspecialchars($error) ?></div>

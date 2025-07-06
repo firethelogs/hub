@@ -3,6 +3,7 @@
 session_start();
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/credit_cards.php';
 require_login();
 include __DIR__ . '/includes/header.php';
 
@@ -29,8 +30,8 @@ if (isset($_SESSION['success'])) {
 }
 ?>
 <div class="card">
-    <h2>🛍️ Store</h2>
-    <p>Purchase items to unlock exclusive content!</p>
+    <h2>🛍️ JaxxyCC Store</h2>
+    <p>Purchase premium items to unlock exclusive content!</p>
     
     <?php if ($error_msg): ?>
         <div class="error"><?= htmlspecialchars($error_msg) ?></div>
@@ -43,9 +44,42 @@ if (isset($_SESSION['success'])) {
     <?php if (count($items) > 0): ?>
     <div class="store-items">
         <?php foreach ($items as $item): ?>
-        <div class="store-item">
+        <div class="store-item <?= $item['is_credit_card'] ? 'credit-card-item' : '' ?>">
             <div class="item-header">
-                <h3><?= htmlspecialchars($item['title']) ?></h3>
+                <div class="item-title-section">
+                    <?php if ($item['is_credit_card']): ?>
+                        <div class="credit-card-badge" style="background-color: <?= getCreditCardColor($item['credit_card_type']) ?>;">
+                            <span class="card-logo"><?= getCreditCardLogo($item['credit_card_type']) ?></span>
+                            <span class="card-name"><?= getCreditCardName($item['credit_card_type']) ?></span>
+                        </div>
+                    <?php endif; ?>
+                    <h3><?= htmlspecialchars($item['title']) ?></h3>
+                    <?php if ($item['is_credit_card']): ?>
+                        <div class="card-details"><?= htmlspecialchars(getCardDetails($item)) ?></div>
+                        
+                        <div class="card-preview">
+                            <div class="card-preview-header">
+                                <div class="card-preview-number"><?= maskCardNumber($item['card_number']) ?></div>
+                                <div class="card-logo"><?= getCreditCardLogo($item['credit_card_type']) ?></div>
+                            </div>
+                            <div class="card-preview-details">
+                                <div class="card-preview-holder">
+                                    <?= $item['card_holder_name'] ? htmlspecialchars($item['card_holder_name']) : 'CARDHOLDER NAME' ?>
+                                </div>
+                                <div>
+                                    <div>EXP: <?= formatCardExpiry($item['card_expiry']) ?></div>
+                                    <div>CVV: <?= maskCvv($item['card_cvv']) ?></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-hidden-info">
+                            🔒 Full card details revealed after purchase
+                        </div>
+                    <?php elseif ($item['credit_card_details']): ?>
+                        <p class="card-details"><?= htmlspecialchars($item['credit_card_details']) ?></p>
+                    <?php endif; ?>
+                </div>
                 <div class="item-price">$<?= number_format($item['price'], 2) ?></div>
             </div>
             
@@ -116,10 +150,48 @@ if (isset($_SESSION['success'])) {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
+.store-item.credit-card-item {
+    border: 2px solid rgba(16, 185, 129, 0.3);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(40, 40, 40, 0.6));
+}
+
+.credit-card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.card-logo {
+    font-size: 1.2rem;
+}
+
+.card-name {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.item-title-section {
+    flex: 1;
+}
+
+.card-details {
+    color: #10b981;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+    font-weight: 600;
+}
+
 .item-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 1rem;
 }
 

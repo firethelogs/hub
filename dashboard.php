@@ -60,7 +60,7 @@ $purchases = $purchases->fetchAll(PDO::FETCH_ASSOC);
         <?php endforeach; ?>
     </table>
     <?php else: ?>
-    <p style="color: #888; text-align: center; padding: 2rem;">No purchases yet. <a href="/store.php" style="color: #6366f1;">Visit the store</a> to buy some items!</p>
+    <p style="color: #888; text-align: center; padding: 2rem;">No purchases yet. <a href="/store.php" style="color: #6366f1;">Visit JaxxyCC Store</a> to buy some items!</p>
     <?php endif; ?>
 </div>
 <?php include __DIR__ . '/includes/footer.php'; ?>

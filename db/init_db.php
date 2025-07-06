@@ -38,6 +38,9 @@ CREATE TABLE IF NOT EXISTS items (
     stock_limit INTEGER DEFAULT -1,
     is_limited INTEGER DEFAULT 0,
     purchases_count INTEGER DEFAULT 0,
+    is_credit_card INTEGER DEFAULT 0,
+    credit_card_type TEXT DEFAULT NULL,
+    credit_card_details TEXT DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

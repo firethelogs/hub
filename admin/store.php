@@ -3,6 +3,8 @@
 session_start();
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/credit_cards.php';
+require_once __DIR__ . '/../includes/bin_lookup.php';
 require_admin();
 include __DIR__ . '/../includes/header.php';
 
@@ -15,10 +17,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'], $_POST['pric
     $content = trim($_POST['content']);
     $is_limited = isset($_POST['is_limited']) ? 1 : 0;
     $stock_limit = $is_limited ? (int)$_POST['stock_limit'] : -1;
+    $is_credit_card = isset($_POST['is_credit_card']) ? 1 : 0;
+    $credit_card_type = $is_credit_card ? trim($_POST['credit_card_type']) : null;
+    $credit_card_details = $is_credit_card ? trim($_POST['credit_card_details']) : null;
+    
+    // Credit card data fields
+    $card_number = $is_credit_card ? trim($_POST['card_number']) : null;
+    $card_expiry = $is_credit_card ? trim($_POST['card_expiry']) : null;
+    $card_cvv = $is_credit_card ? trim($_POST['card_cvv']) : null;
+    $card_holder_name = $is_credit_card ? trim($_POST['card_holder_name']) : null;
+    $card_bank = $is_credit_card ? trim($_POST['card_bank']) : null;
+    $card_country = $is_credit_card ? trim($_POST['card_country']) : null;
+    $card_level = $is_credit_card ? trim($_POST['card_level']) : null;
     
     if ($title && $price > 0 && $content) {
-        $stmt = $db->prepare('INSERT INTO items (title, price, content, is_limited, stock_limit, purchases_count) VALUES (?, ?, ?, ?, ?, 0)');
-        $stmt->execute([$title, $price, $content, $is_limited, $stock_limit]);
+        $stmt = $db->prepare('INSERT INTO items (title, price, content, is_limited, stock_limit, purchases_count, is_credit_card, credit_card_type, credit_card_details, card_number, card_expiry, card_cvv, card_holder_name, card_bank, card_country, card_level) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$title, $price, $content, $is_limited, $stock_limit, $is_credit_card, $credit_card_type, $credit_card_details, $card_number, $card_expiry, $card_cvv, $card_holder_name, $card_bank, $card_country, $card_level]);
         $msg = 'Item added successfully!';
     } else {
         $error = 'Please fill in all required fields.';
@@ -33,10 +47,22 @@ if (isset($_POST['edit_id'], $_POST['edit_title'], $_POST['edit_price'], $_POST[
     $content = trim($_POST['edit_content']);
     $is_limited = isset($_POST['edit_is_limited']) ? 1 : 0;
     $stock_limit = $is_limited ? (int)$_POST['edit_stock_limit'] : -1;
+    $is_credit_card = isset($_POST['edit_is_credit_card']) ? 1 : 0;
+    $credit_card_type = $is_credit_card ? trim($_POST['edit_credit_card_type']) : null;
+    $credit_card_details = $is_credit_card ? trim($_POST['edit_credit_card_details']) : null;
+    
+    // Credit card data fields
+    $card_number = $is_credit_card ? trim($_POST['edit_card_number']) : null;
+    $card_expiry = $is_credit_card ? trim($_POST['edit_card_expiry']) : null;
+    $card_cvv = $is_credit_card ? trim($_POST['edit_card_cvv']) : null;
+    $card_holder_name = $is_credit_card ? trim($_POST['edit_card_holder_name']) : null;
+    $card_bank = $is_credit_card ? trim($_POST['edit_card_bank']) : null;
+    $card_country = $is_credit_card ? trim($_POST['edit_card_country']) : null;
+    $card_level = $is_credit_card ? trim($_POST['edit_card_level']) : null;
     
     if ($title && $price > 0 && $content) {
-        $stmt = $db->prepare('UPDATE items SET title = ?, price = ?, content = ?, is_limited = ?, stock_limit = ? WHERE id = ?');
-        $stmt->execute([$title, $price, $content, $is_limited, $stock_limit, $id]);
+        $stmt = $db->prepare('UPDATE items SET title = ?, price = ?, content = ?, is_limited = ?, stock_limit = ?, is_credit_card = ?, credit_card_type = ?, credit_card_details = ?, card_number = ?, card_expiry = ?, card_cvv = ?, card_holder_name = ?, card_bank = ?, card_country = ?, card_level = ? WHERE id = ?');
+        $stmt->execute([$title, $price, $content, $is_limited, $stock_limit, $is_credit_card, $credit_card_type, $credit_card_details, $card_number, $card_expiry, $card_cvv, $card_holder_name, $card_bank, $card_country, $card_level, $id]);
         $msg = 'Item updated successfully!';
     } else {
         $error = 'Please fill in all required fields.';
@@ -56,7 +82,7 @@ $items = $db->query('SELECT * FROM items ORDER BY created_at DESC')->fetchAll(PD
 
 <div class="store-admin">
     <div class="admin-header">
-        <h1>🛍️ Store Management</h1>
+        <h1>🛍️ JaxxyCC Store Management</h1>
         <p>Add, edit, and manage your store items</p>
     </div>
 
@@ -101,6 +127,76 @@ $items = $db->query('SELECT * FROM items ORDER BY created_at DESC')->fetchAll(PD
                 </div>
             </div>
             
+            <div class="credit-card-controls">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="is_credit_card" name="is_credit_card" onchange="toggleCreditCard()">
+                    <label for="is_credit_card">💳 This is a Credit Card</label>
+                </div>
+                <div class="credit-card-input" id="credit_card_input" style="display: none;">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Card Type</label>
+                            <select name="credit_card_type">
+                                <option value="">Select Card Type</option>
+                                <option value="visa">Visa</option>
+                                <option value="mastercard">Mastercard</option>
+                                <option value="amex">American Express</option>
+                                <option value="discover">Discover</option>
+                                <option value="jcb">JCB</option>
+                                <option value="diners">Diners Club</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Card Details (Public info)</label>
+                            <input type="text" name="credit_card_details" placeholder="e.g., Premium, USA, Gold Level">
+                        </div>
+                    </div>
+                    
+                    <h4>📋 Credit Card Data (Hidden from customers until purchase)</h4>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Card Number</label>
+                            <div class="input-group">
+                                <input type="text" name="card_number" id="card_number" placeholder="1234 5678 9012 3456" maxlength="19">
+                                <button type="button" class="btn-lookup" onclick="lookupBIN('card_number')">🔍 Auto-Fill</button>
+                            </div>
+                            <small class="lookup-status" id="lookup_status"></small>
+                        </div>
+                        <div class="form-group">
+                            <label>Expiry Date</label>
+                            <input type="text" name="card_expiry" placeholder="MM/YY" maxlength="5">
+                        </div>
+                        <div class="form-group">
+                            <label>CVV</label>
+                            <input type="text" name="card_cvv" placeholder="123" maxlength="4">
+                        </div>
+                        <div class="form-group">
+                            <label>Cardholder Name</label>
+                            <input type="text" name="card_holder_name" placeholder="John Doe">
+                        </div>
+                        <div class="form-group">
+                            <label>Bank</label>
+                            <input type="text" name="card_bank" placeholder="Chase Bank">
+                        </div>
+                        <div class="form-group">
+                            <label>Country</label>
+                            <input type="text" name="card_country" placeholder="USA">
+                        </div>
+                        <div class="form-group">
+                            <label>Card Level</label>
+                            <select name="card_level">
+                                <option value="">Select Level</option>
+                                <option value="standard">Standard</option>
+                                <option value="gold">Gold</option>
+                                <option value="platinum">Platinum</option>
+                                <option value="black">Black</option>
+                                <option value="business">Business</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <button type="submit" class="btn-primary">🚀 Add Item</button>
         </form>
     </div>
@@ -111,9 +207,20 @@ $items = $db->query('SELECT * FROM items ORDER BY created_at DESC')->fetchAll(PD
         <h2>📦 Manage Existing Items</h2>
         <div class="items-grid">
             <?php foreach ($items as $item): ?>
-            <div class="item-card">
+            <div class="item-card <?= $item['is_credit_card'] ? 'credit-card-item' : '' ?>">
                 <div class="item-header">
-                    <h3><?= htmlspecialchars($item['title']) ?></h3>
+                    <div class="item-title-section">
+                        <?php if ($item['is_credit_card']): ?>
+                            <div class="credit-card-badge" style="background-color: <?= getCreditCardColor($item['credit_card_type']) ?>;">
+                                <span class="card-logo"><?= getCreditCardLogo($item['credit_card_type']) ?></span>
+                                <span class="card-name"><?= getCreditCardName($item['credit_card_type']) ?></span>
+                            </div>
+                        <?php endif; ?>
+                        <h3><?= htmlspecialchars($item['title']) ?></h3>
+                        <?php if ($item['is_credit_card'] && $item['credit_card_details']): ?>
+                            <p class="card-details"><?= htmlspecialchars($item['credit_card_details']) ?></p>
+                        <?php endif; ?>
+                    </div>
                     <div class="item-price">$<?= number_format($item['price'], 2) ?></div>
                 </div>
                 
@@ -173,6 +280,76 @@ $items = $db->query('SELECT * FROM items ORDER BY created_at DESC')->fetchAll(PD
                             <div class="stock-input" id="edit_stock_input_<?= $item['id'] ?>" style="display: <?= $item['is_limited'] ? 'block' : 'none' ?>;">
                                 <label>Stock Limit</label>
                                 <input type="number" name="edit_stock_limit" min="1" value="<?= $item['stock_limit'] ?>">
+                            </div>
+                        </div>
+                        
+                        <div class="credit-card-controls">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="edit_is_credit_card_<?= $item['id'] ?>" name="edit_is_credit_card" <?= $item['is_credit_card'] ? 'checked' : '' ?> onchange="toggleEditCreditCard(<?= $item['id'] ?>)">
+                                <label for="edit_is_credit_card_<?= $item['id'] ?>">💳 Credit Card</label>
+                            </div>
+                            <div class="credit-card-input" id="edit_credit_card_input_<?= $item['id'] ?>" style="display: <?= $item['is_credit_card'] ? 'block' : 'none' ?>;">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Card Type</label>
+                                        <select name="edit_credit_card_type">
+                                            <option value="">Select Card Type</option>
+                                            <option value="visa" <?= $item['credit_card_type'] == 'visa' ? 'selected' : '' ?>>Visa</option>
+                                            <option value="mastercard" <?= $item['credit_card_type'] == 'mastercard' ? 'selected' : '' ?>>Mastercard</option>
+                                            <option value="amex" <?= $item['credit_card_type'] == 'amex' ? 'selected' : '' ?>>American Express</option>
+                                            <option value="discover" <?= $item['credit_card_type'] == 'discover' ? 'selected' : '' ?>>Discover</option>
+                                            <option value="jcb" <?= $item['credit_card_type'] == 'jcb' ? 'selected' : '' ?>>JCB</option>
+                                            <option value="diners" <?= $item['credit_card_type'] == 'diners' ? 'selected' : '' ?>>Diners Club</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Card Details (Public)</label>
+                                        <input type="text" name="edit_credit_card_details" value="<?= htmlspecialchars($item['credit_card_details'] ?? '') ?>" placeholder="e.g., Premium, USA, Gold Level">
+                                    </div>
+                                </div>
+                                
+                                <h4>📋 Credit Card Data</h4>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Card Number</label>
+                                        <div class="input-group">
+                                            <input type="text" name="edit_card_number" id="edit_card_number_<?= $item['id'] ?>" value="<?= htmlspecialchars($item['card_number'] ?? '') ?>" placeholder="1234 5678 9012 3456">
+                                            <button type="button" class="btn-lookup" onclick="lookupBINEdit(<?= $item['id'] ?>)">🔍 Auto-Fill</button>
+                                        </div>
+                                        <small class="lookup-status" id="edit_lookup_status_<?= $item['id'] ?>"></small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Expiry Date</label>
+                                        <input type="text" name="edit_card_expiry" value="<?= htmlspecialchars($item['card_expiry'] ?? '') ?>" placeholder="MM/YY">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>CVV</label>
+                                        <input type="text" name="edit_card_cvv" value="<?= htmlspecialchars($item['card_cvv'] ?? '') ?>" placeholder="123">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Cardholder Name</label>
+                                        <input type="text" name="edit_card_holder_name" value="<?= htmlspecialchars($item['card_holder_name'] ?? '') ?>" placeholder="John Doe">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Bank</label>
+                                        <input type="text" name="edit_card_bank" value="<?= htmlspecialchars($item['card_bank'] ?? '') ?>" placeholder="Chase Bank">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Country</label>
+                                        <input type="text" name="edit_card_country" value="<?= htmlspecialchars($item['card_country'] ?? '') ?>" placeholder="USA">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Card Level</label>
+                                        <select name="edit_card_level">
+                                            <option value="">Select Level</option>
+                                            <option value="standard" <?= $item['card_level'] == 'standard' ? 'selected' : '' ?>>Standard</option>
+                                            <option value="gold" <?= $item['card_level'] == 'gold' ? 'selected' : '' ?>>Gold</option>
+                                            <option value="platinum" <?= $item['card_level'] == 'platinum' ? 'selected' : '' ?>>Platinum</option>
+                                            <option value="black" <?= $item['card_level'] == 'black' ? 'selected' : '' ?>>Black</option>
+                                            <option value="business" <?= $item['card_level'] == 'business' ? 'selected' : '' ?>>Business</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="form-actions">
@@ -254,6 +431,14 @@ $items = $db->query('SELECT * FROM items ORDER BY created_at DESC')->fetchAll(PD
     margin: 1rem 0;
 }
 
+.credit-card-controls {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
 .checkbox-group {
     display: flex;
     align-items: center;
@@ -314,10 +499,48 @@ $items = $db->query('SELECT * FROM items ORDER BY created_at DESC')->fetchAll(PD
     transform: translateY(-2px);
 }
 
+.item-card.credit-card-item {
+    border: 2px solid rgba(16, 185, 129, 0.3);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(30, 30, 30, 0.8));
+}
+
+.credit-card-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.card-logo {
+    font-size: 1.2rem;
+}
+
+.card-name {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.item-title-section {
+    flex: 1;
+}
+
+.card-details {
+    color: #10b981;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+    font-weight: 600;
+}
+
 .item-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 1rem;
 }
 
@@ -432,6 +655,89 @@ $items = $db->query('SELECT * FROM items ORDER BY created_at DESC')->fetchAll(PD
     margin-bottom: 1rem;
 }
 
+/* Input Group Styles */
+.input-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+}
+
+.input-group input {
+    flex: 1;
+    min-width: 200px;
+    width: auto;
+}
+
+.btn-lookup {
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+    transition: all 0.2s;
+    min-width: 90px;
+}
+
+.btn-lookup:hover {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    transform: translateY(-1px);
+}
+
+.btn-lookup:disabled {
+    background: #6b7280;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Lookup Status Styles */
+.lookup-status {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.lookup-status.loading {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.lookup-status.success {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.lookup-status.error {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Make sure form inputs have adequate width */
+.form-group input[type="text"] {
+    min-width: 200px;
+    width: 100%;
+}
+
+.form-grid .form-group {
+    min-width: 0;
+}
+
+/* Auto-filled visual feedback */
+.auto-filled {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+    border-color: #10b981 !important;
+    transition: all 0.3s ease;
+}
+
+.auto-filled:focus {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
 @media (max-width: 768px) {
     .form-grid {
         grid-template-columns: 1fr;
@@ -450,10 +756,22 @@ function toggleStockLimit() {
     stockInput.style.display = checkbox.checked ? 'block' : 'none';
 }
 
+function toggleCreditCard() {
+    const checkbox = document.getElementById('is_credit_card');
+    const creditCardInput = document.getElementById('credit_card_input');
+    creditCardInput.style.display = checkbox.checked ? 'block' : 'none';
+}
+
 function toggleEditStockLimit(itemId) {
     const checkbox = document.getElementById('edit_is_limited_' + itemId);
     const stockInput = document.getElementById('edit_stock_input_' + itemId);
     stockInput.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+function toggleEditCreditCard(itemId) {
+    const checkbox = document.getElementById('edit_is_credit_card_' + itemId);
+    const creditCardInput = document.getElementById('edit_credit_card_input_' + itemId);
+    creditCardInput.style.display = checkbox.checked ? 'block' : 'none';
 }
 
 function editItem(itemId) {
@@ -465,5 +783,269 @@ function cancelEdit(itemId) {
     const editForm = document.getElementById('edit-form-' + itemId);
     editForm.style.display = 'none';
 }
+
+// Format credit card numbers
+function formatCardNumber(input) {
+    // Remove all non-digit characters
+    let value = input.value.replace(/\D/g, '');
+    
+    // Add spaces every 4 digits
+    value = value.replace(/(.{4})/g, '$1 ');
+    
+    // Remove trailing space
+    value = value.trim();
+    
+    // Limit to 19 characters (16 digits + 3 spaces)
+    if (value.length > 19) {
+        value = value.substring(0, 19);
+    }
+    
+    input.value = value;
+}
+
+// Format expiry date
+function formatExpiry(input) {
+    let value = input.value.replace(/\D/g, '');
+    
+    if (value.length >= 2) {
+        value = value.substring(0, 2) + '/' + value.substring(2, 4);
+    }
+    
+    input.value = value;
+}
+
+// BIN Lookup functionality
+async function lookupBIN(inputId) {
+    const cardNumberInput = document.getElementById(inputId);
+    const cardNumber = cardNumberInput.value.replace(/\s/g, '');
+    const statusElement = document.getElementById('lookup_status');
+    const lookupButton = document.querySelector('.btn-lookup');
+    
+    // Validate card number length
+    if (cardNumber.length < 8) {
+        statusElement.textContent = 'Please enter at least 8 digits';
+        statusElement.className = 'lookup-status error';
+        return;
+    }
+    
+    // Show loading state
+    statusElement.textContent = '🔍 Looking up card details...';
+    statusElement.className = 'lookup-status loading';
+    lookupButton.disabled = true;
+    lookupButton.textContent = '🔄 Loading...';
+    
+    try {
+        const formData = new FormData();
+        formData.append('card_number', cardNumber);
+        
+        const response = await fetch('/ajax/bin_lookup.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            // Auto-fill the form with BIN data
+            autoFillCardData(data);
+            statusElement.textContent = '✅ Card details auto-filled successfully!';
+            statusElement.className = 'lookup-status success';
+        } else {
+            statusElement.textContent = '❌ ' + (data.error || 'BIN lookup failed');
+            statusElement.className = 'lookup-status error';
+        }
+    } catch (error) {
+        console.error('BIN lookup error:', error);
+        statusElement.textContent = '❌ Network error during lookup';
+        statusElement.className = 'lookup-status error';
+    } finally {
+        // Reset button state
+        lookupButton.disabled = false;
+        lookupButton.textContent = '🔍 Auto-Fill';
+    }
+}
+
+function autoFillCardData(binData) {
+    // Auto-fill card type
+    const cardTypeSelect = document.querySelector('select[name="credit_card_type"]');
+    if (cardTypeSelect && binData.card_type) {
+        cardTypeSelect.value = binData.card_type;
+        
+        // Add visual feedback
+        cardTypeSelect.classList.add('auto-filled');
+        setTimeout(() => cardTypeSelect.classList.remove('auto-filled'), 3000);
+    }
+    
+    // Auto-fill card details
+    const cardDetailsInput = document.querySelector('input[name="credit_card_details"]');
+    if (cardDetailsInput && binData.details) {
+        cardDetailsInput.value = binData.details;
+        cardDetailsInput.classList.add('auto-filled');
+        setTimeout(() => cardDetailsInput.classList.remove('auto-filled'), 3000);
+    }
+    
+    // Auto-fill bank name
+    const bankInput = document.querySelector('input[name="card_bank"]');
+    if (bankInput && binData.bank && binData.bank !== 'Unknown Bank') {
+        bankInput.value = binData.bank;
+        bankInput.classList.add('auto-filled');
+        setTimeout(() => bankInput.classList.remove('auto-filled'), 3000);
+    }
+    
+    // Auto-fill country
+    const countryInput = document.querySelector('input[name="card_country"]');
+    if (countryInput && binData.country && binData.country !== 'Unknown') {
+        countryInput.value = binData.country;
+        countryInput.classList.add('auto-filled');
+        setTimeout(() => countryInput.classList.remove('auto-filled'), 3000);
+    }
+    
+    // Auto-fill card level based on type
+    const levelSelect = document.querySelector('select[name="card_level"]');
+    if (levelSelect && binData.type) {
+        const typeMapping = {
+            'credit': 'standard',
+            'debit': 'standard',
+            'prepaid': 'standard'
+        };
+        const level = typeMapping[binData.type.toLowerCase()] || 'standard';
+        levelSelect.value = level;
+        levelSelect.classList.add('auto-filled');
+        setTimeout(() => levelSelect.classList.remove('auto-filled'), 3000);
+    }
+}
+
+// BIN Lookup for edit forms
+async function lookupBINEdit(itemId) {
+    const cardNumberInput = document.getElementById(`edit_card_number_${itemId}`);
+    const cardNumber = cardNumberInput.value.replace(/\s/g, '');
+    const statusElement = document.getElementById(`edit_lookup_status_${itemId}`);
+    const lookupButton = event.target;
+    
+    // Validate card number length
+    if (cardNumber.length < 8) {
+        statusElement.textContent = 'Please enter at least 8 digits';
+        statusElement.className = 'lookup-status error';
+        return;
+    }
+    
+    // Show loading state
+    statusElement.textContent = '🔍 Looking up card details...';
+    statusElement.className = 'lookup-status loading';
+    lookupButton.disabled = true;
+    lookupButton.textContent = '🔄 Loading...';
+    
+    try {
+        const formData = new FormData();
+        formData.append('card_number', cardNumber);
+        
+        const response = await fetch('/ajax/bin_lookup.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            // Auto-fill the edit form with BIN data
+            autoFillEditCardData(itemId, data);
+            statusElement.textContent = '✅ Card details auto-filled successfully!';
+            statusElement.className = 'lookup-status success';
+        } else {
+            statusElement.textContent = '❌ ' + (data.error || 'BIN lookup failed');
+            statusElement.className = 'lookup-status error';
+        }
+    } catch (error) {
+        console.error('BIN lookup error:', error);
+        statusElement.textContent = '❌ Network error during lookup';
+        statusElement.className = 'lookup-status error';
+    } finally {
+        // Reset button state
+        lookupButton.disabled = false;
+        lookupButton.textContent = '🔍 Auto-Fill';
+    }
+}
+
+function autoFillEditCardData(itemId, binData) {
+    // Auto-fill card type
+    const cardTypeSelect = document.querySelector(`select[name="edit_credit_card_type"]`);
+    if (cardTypeSelect && binData.card_type) {
+        cardTypeSelect.value = binData.card_type;
+        cardTypeSelect.classList.add('auto-filled');
+        setTimeout(() => cardTypeSelect.classList.remove('auto-filled'), 3000);
+    }
+    
+    // Auto-fill card details
+    const cardDetailsInput = document.querySelector(`input[name="edit_credit_card_details"]`);
+    if (cardDetailsInput && binData.details) {
+        cardDetailsInput.value = binData.details;
+        cardDetailsInput.classList.add('auto-filled');
+        setTimeout(() => cardDetailsInput.classList.remove('auto-filled'), 3000);
+    }
+    
+    // Auto-fill bank name
+    const bankInput = document.querySelector(`input[name="edit_card_bank"]`);
+    if (bankInput && binData.bank && binData.bank !== 'Unknown Bank') {
+        bankInput.value = binData.bank;
+        bankInput.classList.add('auto-filled');
+        setTimeout(() => bankInput.classList.remove('auto-filled'), 3000);
+    }
+    
+    // Auto-fill country
+    const countryInput = document.querySelector(`input[name="edit_card_country"]`);
+    if (countryInput && binData.country && binData.country !== 'Unknown') {
+        countryInput.value = binData.country;
+        countryInput.classList.add('auto-filled');
+        setTimeout(() => countryInput.classList.remove('auto-filled'), 3000);
+    }
+    
+    // Auto-fill card level based on type
+    const levelSelect = document.querySelector(`select[name="edit_card_level"]`);
+    if (levelSelect && binData.type) {
+        const typeMapping = {
+            'credit': 'standard',
+            'debit': 'standard',
+            'prepaid': 'standard'
+        };
+        const level = typeMapping[binData.type.toLowerCase()] || 'standard';
+        levelSelect.value = level;
+        levelSelect.classList.add('auto-filled');
+        setTimeout(() => levelSelect.classList.remove('auto-filled'), 3000);
+    }
+}
+
+// Add Enter key support for BIN lookup
+document.addEventListener('DOMContentLoaded', function() {
+    const cardNumberInput = document.getElementById('card_number');
+    if (cardNumberInput) {
+        cardNumberInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                lookupBIN('card_number');
+            }
+        });
+    }
+    
+    // Format card number inputs
+    document.querySelectorAll('input[name="card_number"], input[name="edit_card_number"]').forEach(function(input) {
+        input.addEventListener('input', function() {
+            formatCardNumber(this);
+        });
+    });
+    
+    // Format expiry inputs
+    document.querySelectorAll('input[name="card_expiry"], input[name="edit_card_expiry"]').forEach(function(input) {
+        input.addEventListener('input', function() {
+            formatExpiry(this);
+        });
+    });
+    
+    // Limit CVV to 4 digits
+    document.querySelectorAll('input[name="card_cvv"], input[name="edit_card_cvv"]').forEach(function(input) {
+        input.addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '').substring(0, 4);
+        });
+    });
+});
 </script>
 <?php include __DIR__ . '/../includes/footer.php'; ?>

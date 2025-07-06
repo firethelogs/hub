@@ -48,7 +48,7 @@ $active_users = $db->query('
 
 <div class="analytics-dashboard">
     <div class="admin-header">
-        <h1>📊 Analytics Dashboard</h1>
+        <h1>📊 JaxxyCC Store Analytics</h1>
         <p>Track your platform's performance</p>
     </div>
 

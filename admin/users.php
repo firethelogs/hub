@@ -20,12 +20,30 @@ if (isset($_POST['unban'])) {
     $success_msg = 'User unbanned successfully!';
 }
 
-$users = $db->query('SELECT u.*, w.balance FROM users u LEFT JOIN wallets w ON u.id = w.user_id ORDER BY u.created_at DESC')->fetchAll(PDO::FETCH_ASSOC);
+// Handle search
+$searchTerm = isset($_GET['search']) ? trim($_GET['search']) : '';
+$searchQuery = '';
+$searchParams = [];
+
+if ($searchTerm) {
+    // Check if search term is numeric for exact Telegram ID match
+    if (is_numeric($searchTerm)) {
+        $searchQuery = " WHERE (u.username LIKE ? OR u.telegram_username LIKE ? OR u.telegram_first_name LIKE ? OR u.telegram_id = ? OR u.email LIKE ?)";
+        $searchParams = ["%$searchTerm%", "%$searchTerm%", "%$searchTerm%", intval($searchTerm), "%$searchTerm%"];
+    } else {
+        $searchQuery = " WHERE (u.username LIKE ? OR u.telegram_username LIKE ? OR u.telegram_first_name LIKE ? OR u.email LIKE ?)";
+        $searchParams = ["%$searchTerm%", "%$searchTerm%", "%$searchTerm%", "%$searchTerm%"];
+    }
+}
+
+$stmt = $db->prepare("SELECT u.*, w.balance FROM users u LEFT JOIN wallets w ON u.id = w.user_id$searchQuery ORDER BY u.created_at DESC");
+$stmt->execute($searchParams);
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <div class="users-admin">
     <div class="admin-header">
-        <h1>👥 User Management</h1>
+        <h1>👥 JaxxyCC Store Users</h1>
         <p>Manage registered users and their access</p>
     </div>
 
@@ -33,15 +51,56 @@ $users = $db->query('SELECT u.*, w.balance FROM users u LEFT JOIN wallets w ON u
         <div class="success"><?= htmlspecialchars($success_msg) ?></div>
     <?php endif; ?>
 
+    <!-- Search Users -->
+    <div class="search-section">
+        <h3>🔍 Search Users</h3>
+        <form method="get" class="search-form">
+            <input type="text" name="search" value="<?= htmlspecialchars($searchTerm) ?>" 
+                   placeholder="Search by username, Telegram ID, name, or email..." 
+                   class="search-input">
+            <button type="submit" class="search-btn">
+                🔍 Search
+            </button>
+            <?php if ($searchTerm): ?>
+                <a href="?search=" class="clear-btn">
+                    ✕ Clear
+                </a>
+            <?php endif; ?>
+        </form>
+        
+        <div class="search-results">
+            <?php if (empty($users)): ?>
+                <p class="no-results">
+                    <?= $searchTerm ? 'No users found matching your search.' : 'No users found.' ?>
+                </p>
+            <?php else: ?>
+                <p class="results-count">
+                    Found <?= count($users) ?> user<?= count($users) !== 1 ? 's' : '' ?><?= $searchTerm ? ' matching "' . htmlspecialchars($searchTerm) . '"' : '' ?>
+                </p>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <div class="users-grid">
         <?php foreach ($users as $user): ?>
         <div class="user-card">
             <div class="user-header">
                 <div class="user-avatar">
-                    <?= strtoupper(substr($user['username'], 0, 2)) ?>
+                    <?php 
+                    $displayName = get_display_name($user);
+                    echo strtoupper(substr($displayName, 0, 2));
+                    ?>
                 </div>
                 <div class="user-info">
-                    <h3><?= htmlspecialchars($user['username']) ?></h3>
+                    <h3>
+                        <?php 
+                        $displayName = get_display_name($user);
+                        echo htmlspecialchars($displayName);
+                        ?>
+                        <?php if ($displayName !== $user['username']): ?>
+                            <small style="color: #888; font-weight: normal;">(<?= htmlspecialchars($user['username']) ?>)</small>
+                        <?php endif; ?>
+                    </h3>
                     <p><?= htmlspecialchars($user['email']) ?></p>
                 </div>
                 <div class="user-status">
@@ -60,6 +119,21 @@ $users = $db->query('SELECT u.*, w.balance FROM users u LEFT JOIN wallets w ON u
                     <span class="label">User ID:</span>
                     <span class="value">#<?= $user['id'] ?></span>
                 </div>
+                
+                <?php if ($user['telegram_id']): ?>
+                <div class="detail-item">
+                    <span class="label">Telegram ID:</span>
+                    <span class="value"><?= htmlspecialchars($user['telegram_id']) ?></span>
+                </div>
+                <?php endif; ?>
+                
+                <?php if ($user['telegram_username']): ?>
+                <div class="detail-item">
+                    <span class="label">Telegram Username:</span>
+                    <span class="value">@<?= htmlspecialchars($user['telegram_username']) ?></span>
+                </div>
+                <?php endif; ?>
+                
                 <div class="detail-item">
                     <span class="label">Wallet Balance:</span>
                     <span class="value balance">$<?= number_format($user['balance'] ?? 0, 2) ?></span>
@@ -111,6 +185,105 @@ $users = $db->query('SELECT u.*, w.balance FROM users u LEFT JOIN wallets w ON u
     margin-bottom: 0.5rem;
 }
 
+.search-section {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.search-section h3 {
+    margin: 0 0 1rem 0;
+    color: #60a5fa;
+    font-size: 1.2rem;
+}
+
+.search-form {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.search-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #e8e8e8;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    min-width: 0; /* Prevent flex item from overflowing */
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #60a5fa;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.search-input::placeholder {
+    color: #888;
+}
+
+.search-input::selection {
+    background: rgba(96, 165, 250, 0.3);
+    color: #fff;
+}
+
+.search-btn {
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.search-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
+}
+
+.clear-btn {
+    padding: 0.75rem 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: #e8e8e8;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.clear-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.search-results {
+    margin-top: 1rem;
+}
+
+.no-results {
+    color: #888;
+    text-align: center;
+    font-style: italic;
+    margin: 0;
+}
+
+.results-count {
+    color: #888;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
 .users-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -122,11 +295,13 @@ $users = $db->query('SELECT u.*, w.balance FROM users u LEFT JOIN wallets w ON u
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     padding: 1.5rem;
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
 }
 
 .user-card:hover {
     transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .user-header {
@@ -147,22 +322,30 @@ $users = $db->query('SELECT u.*, w.balance FROM users u LEFT JOIN wallets w ON u
     color: white;
     font-weight: bold;
     font-size: 1.2rem;
+    flex-shrink: 0;
 }
 
 .user-info {
     flex: 1;
+    min-width: 0; /* Prevent overflow */
 }
 
 .user-info h3 {
     color: #fff;
     margin: 0;
     font-size: 1.1rem;
+    word-break: break-word;
 }
 
 .user-info p {
     color: #888;
     margin: 0;
     font-size: 0.9rem;
+    word-break: break-word;
+}
+
+.user-status {
+    flex-shrink: 0;
 }
 
 .status-badge {
@@ -172,6 +355,7 @@ $users = $db->query('SELECT u.*, w.balance FROM users u LEFT JOIN wallets w ON u
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .status-badge.admin {
@@ -208,11 +392,14 @@ $users = $db->query('SELECT u.*, w.balance FROM users u LEFT JOIN wallets w ON u
 .label {
     color: #888;
     font-size: 0.9rem;
+    flex-shrink: 0;
 }
 
 .value {
     color: #fff;
     font-weight: 500;
+    text-align: right;
+    word-break: break-word;
 }
 
 .value.balance {
@@ -258,10 +445,53 @@ $users = $db->query('SELECT u.*, w.balance FROM users u LEFT JOIN wallets w ON u
     box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
 }
 
+/* Responsive improvements */
 @media (max-width: 768px) {
     .users-grid {
         grid-template-columns: 1fr;
     }
+    
+    .search-form {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+    
+    .search-btn,
+    .clear-btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .user-header {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    
+    .user-status {
+        width: 100%;
+    }
+}
+
+/* Fix text selection colors globally */
+::selection {
+    background: rgba(96, 165, 250, 0.3);
+    color: #fff;
+}
+
+::-moz-selection {
+    background: rgba(96, 165, 250, 0.3);
+    color: #fff;
+}
+
+/* Ensure form inputs have proper selection colors */
+input[type="text"]::-moz-selection,
+input[type="search"]::-moz-selection {
+    background: rgba(96, 165, 250, 0.3);
+    color: #fff;
 }
 </style>
 <?php include __DIR__ . '/../includes/footer.php'; ?>
